@@ -14,7 +14,7 @@
     },
     "autoload": {
         "psr-0": {
-            "WPImporter": "src"
+            "Cognito\\WPImporter": "src"
         }
     }
 }
