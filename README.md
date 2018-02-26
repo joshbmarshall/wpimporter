@@ -1,7 +1,5 @@
 # WPImporter
 
-NOTE In progress code, it does not work yet
-
 This package reads a wordpress export file and formats the posts in a generic way that can be imported into a custom system or CMS.
 
 ## Installation
@@ -24,13 +22,20 @@ Transfer the file to the server and parse it by calling
 		$wpimporter = new \Cognito\WPImporter\WPImporter($filename, $siteurl);
 
 		// Get the posts
-		foreach ($wpimporter->posts() as $post) {
+		while ($post = $wpimporter->getPost()) {
 			var_dump($post);
 		}
 
 		// Get the pages
-		foreach ($wpimporter->pages() as $page) {
+		while ($page = $wpimporter->getPage()) {
 			var_dump($page);
 		}
 
+		// Get a custom post type, such as faq
+		while ($faq = $wpimporter->getPostType('faq')) {
+			var_dump($faq);
+		}
 
+## To-do
+
+Grab image files from the live site
