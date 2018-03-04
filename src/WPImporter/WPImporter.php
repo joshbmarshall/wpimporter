@@ -10,16 +10,32 @@ namespace Cognito\WPImporter;
  */
 class WPImporter {
 
-	private $siteurl = NULL;
+	public $siteurl = NULL;
 	private $filename = NULL;
 	private $reader = NULL;
 
-	public function __construct($filename, $siteurl) {
-		$this->siteurl = $siteurl;
+	public function __construct($filename, $siteurl = NULL) {
 		$this->filename = $filename;
 		$this->reader = new \XMLReader();
 		if (!$this->reader->open($this->filename)) {
 			throw new Exception('Failed to open ' . $this->filename);
+		}
+
+		if ($siteurl) {
+			$this->siteurl = trim($siteurl, '/');
+		} else {
+			// Find the blog url
+			while ($this->reader->read()) {
+				if ($this->reader->prefix != 'wp' || $this->reader->localName != 'base_site_url') {
+					continue;
+				}
+				$xml = simplexml_load_string($this->reader->readOuterXml());
+				$arrayData = $this->xmlToArray($xml);
+				if (is_array($arrayData) && array_key_exists('base_site_url', $arrayData)) {
+					$this->siteurl = $arrayData['base_site_url'];
+					break;
+				}
+			}
 		}
 	}
 
@@ -27,14 +43,96 @@ class WPImporter {
 		$this->reader->close();
 	}
 
+	/**
+	 * The next post in the file
+	 * Call this function repeatedly to get each post
+	 * @return array
+	 */
 	public function getPost() {
-		return $this->getPostType('post');
+		$post = $this->getPostType('post');
+		if ($this->siteurl) {
+			// Strip out the site url from the content
+			if ($post['content:encoded']) {
+				$post['content:encoded'] = str_replace($this->siteurl, '', $post['content:encoded']);
+			}
+		}
+		return $post;
 	}
 
+	/**
+	 * The next page in the file
+	 * Call this function repeatedly to get each page
+	 * @return array
+	 */
 	public function getPage() {
-		return $this->getPostType('page');
+		$page = $this->getPostType('page');
+		if ($this->siteurl) {
+			// Strip out the site url from the content
+			if ($page['content:encoded']) {
+				$page['content:encoded'] = str_replace($this->siteurl, '', $page['content:encoded']);
+			}
+		}
+		return $page;
 	}
 
+	/**
+	 * Get list of images referenced by posts from the current site
+	 *
+	 * @return string[]
+	 */
+	public function postImageList() {
+		$imagelist = array();
+
+		while ($post = $this->getPost()) {
+			if (!$post['content:encoded']) {
+				continue;
+			}
+
+			preg_match_all('/src=\"(.*?)\"/', $post['content:encoded'], $srcs);
+			if (is_array($srcs) && array_key_exists(1, $srcs)) {
+				foreach ($srcs[1] as $imgurl) {
+					if (substr($imgurl, 0, 1) == '/') {
+						$imagelist[$imgurl] = 1;
+					}
+				}
+			}
+		}
+
+		return array_keys($imagelist);
+	}
+
+	/**
+	 * Get list of images referenced by pages from the current site
+	 *
+	 * @return string[]
+	 */
+	public function pageImageList() {
+		$imagelist = array();
+
+		while ($page = $this->getPage()) {
+			if (!$page['content:encoded']) {
+				continue;
+			}
+
+			preg_match_all('/src=\"(.*?)\"/', $page['content:encoded'], $srcs);
+			if (is_array($srcs) && array_key_exists(1, $srcs)) {
+				foreach ($srcs[1] as $imgurl) {
+					if (substr($imgurl, 0, 1) == '/') {
+						$imagelist[$imgurl] = 1;
+					}
+				}
+			}
+		}
+
+		return array_keys($imagelist);
+	}
+
+	/**
+	 * The next item of this type in the file
+	 * Call this function repeatedly to get each page
+	 * @var string $post_type
+	 * @return array
+	 */
 	public function getPostType($post_type) {
 		static $last_post_type = NULL;
 
