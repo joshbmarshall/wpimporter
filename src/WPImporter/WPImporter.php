@@ -128,6 +128,30 @@ class WPImporter {
 	}
 
 	/**
+	 * Get list of featured post urls, linked to posts
+	 *
+	 * @return string[]
+	 */
+	public function featuredPostImageList() {
+		$imagelist = array();
+
+		while ($image = $this->getPostType('attachment')) {
+			if (!$image) {
+				continue;
+			}
+			if (!array_key_exists('wp:attachment_url', $image)) {
+				continue;
+			}
+			$imagelist[] = array(
+				'postid' => $image['wp:post_parent'],
+				'url' => $image['wp:attachment_url'],
+			);
+		}
+
+		return $imagelist;
+	}
+
+	/**
 	 * The next item of this type in the file
 	 * Call this function repeatedly to get each page
 	 * @var string $post_type
