@@ -83,3 +83,9 @@ An example would be:
 
 For larger imports you may prefer to export this as a list and use ajax to give progress to the user.
 
+## Featured Images on Posts
+
+To get a list of featured images, call the `featuredPostImageList()` function.
+
+This returns an array containing the post id and the full url to the image.
+You should record the post id when importing the posts so that you can download the image into the system and relate it to the imported post.
