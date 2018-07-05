@@ -18,7 +18,7 @@ class WPImporter {
 		$this->filename = $filename;
 		$this->reader = new \XMLReader();
 		if (!$this->reader->open($this->filename)) {
-			throw new Exception('Failed to open ' . $this->filename);
+			throw new \Exception('Failed to open ' . $this->filename);
 		}
 
 		if ($siteurl) {
